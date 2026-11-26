@@ -6,11 +6,16 @@ A design note; nothing here is deployed.
 
 ```
 Route 53 ─► CloudFront + WAF ─► ALB (HTTPS, public subnets)
-                                  ├─ /api/* ─► ECS Fargate: api        ─┐
-                                  └─ /*     ─► ECS Fargate: dashboard   │  private subnets
-                       SQS scan queue ◄── api           ECS Fargate: scan-worker ◄─ SQS
-                                  RDS PostgreSQL (Multi-AZ) ◄── api, scan-worker
+                                  ├─ /api/* ─► api        (ECS Fargate) ──► SQS scan queue
+                                  └─ /*     ─► dashboard  (ECS Fargate)          │
+                                                                                 ▼
+          RDS PostgreSQL (Multi-AZ) ◄── api, scan-worker ◄──────── scan-worker (ECS Fargate)
+                                                                      │ read-only roles
+                                                                      ▼
+                                                    customer AWS, Azure and Google Cloud
 ```
+
+Everything except the ALB runs in private subnets.
 
 **Compute.** ECS on Fargate with the same images CI builds, pushed to ECR. Three
 services: `dashboard` (nginx), `api` (FastAPI) and `scan-worker`. In production the API
@@ -19,6 +24,15 @@ SQS, and workers take it. Workers scale on queue depth, a crashed worker's messa
 returns to the queue after its visibility timeout, and a dead-letter queue catches scans
 that keep failing. The worker limit stays per task (`SCAN_WORKERS`), so cloud API rate
 limits are respected.
+
+**Collecting inventory.** A worker replaces `inventory.json` with live API calls. It
+signs in to each customer account with the read-only identities below, calls the
+provider APIs (the real work behind `simulated_latency_ms`), and writes the raw responses
+to S3 as a snapshot in the same shape as `inventory.json`: one object per scan, encrypted,
+with a lifecycle rule. The same check registry then runs over that snapshot, so live and
+offline scans share every line of check code, and any result can be replayed later from
+its snapshot. Denied calls become `errors` entries, which the engine already turns into
+CANNOT_SCAN findings.
 
 **Database.** RDS for PostgreSQL, Multi-AZ, encrypted with KMS, automated backups and
 point-in-time recovery. SQLite only suits a single instance; `store.py` is plain SQL and
