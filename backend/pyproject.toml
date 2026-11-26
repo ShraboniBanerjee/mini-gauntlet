@@ -1,0 +1,31 @@
+[project]
+name = "mini-gauntlet-api"
+version = "1.0.0"
+description = "Mini Gauntlet cloud posture scanner API"
+requires-python = ">=3.10"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E", "W", "F",   # pycodestyle, pyflakes
+    "I",             # import order
+    "B",             # bugbear
+    "UP",            # modern syntax
+    "S",             # bandit security rules
+    "SIM", "C4", "RUF", "PT", "N",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+packages = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

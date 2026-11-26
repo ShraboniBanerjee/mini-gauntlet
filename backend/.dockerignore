@@ -1,0 +1,13 @@
+# Only requirements.txt and app/ are copied into the image; keep the context small.
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.ruff_cache
+.mypy_cache
+.venv
+venv
+tests
+*.db
+*.db-*
+.env
+.env.*

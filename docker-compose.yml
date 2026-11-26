@@ -1,0 +1,34 @@
+name: mini-gauntlet
+
+services:
+  api:
+    build: ./backend
+    image: mini-gauntlet-api:local
+    environment:
+      INVENTORY_PATH: /inventory/inventory.json
+      DATABASE_PATH: /data/mini_gauntlet.db
+      SCAN_WORKERS: "4"
+      CORS_ORIGINS: http://localhost:3000
+      LOG_LEVEL: INFO
+    volumes:
+      - ./data:/inventory:ro   # the snapshot, read-only
+      - api-data:/data         # SQLite database, survives restarts and rebuilds
+    ports:
+      - "8000:8000"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+
+  dashboard:
+    build: ./frontend
+    image: mini-gauntlet-dashboard:local
+    ports:
+      - "3000:8080"
+    depends_on:
+      - api
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+
+volumes:
+  api-data:
