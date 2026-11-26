@@ -10,7 +10,8 @@ stores the findings, and shows them in a dashboard.
 - **Docker Compose** runs both; **GitHub Actions** lints, type-checks, tests, builds both
   images and smoke-tests the running stack.
 
-Latest green CI run for the final commit: **TODO: paste the link to the Actions run here**
+**CI:** every push runs the [CI workflow](../../actions/workflows/ci.yml?query=branch%3Amain).
+The first run in that list is the one for the latest commit on `main`.
 
 ## Run it
 
@@ -23,9 +24,12 @@ docker compose up --build
 - Dashboard: http://localhost:3000
 - API: http://localhost:8000 (interactive docs at http://localhost:8000/docs)
 
-Click **Run scan**. The scan shows as running and finishes in about 3 seconds. Data is
-kept in the `api-data` volume, so scans survive `docker compose down` and rebuilds;
+Click **Run scan**. The scan shows as running and finishes in about 3 seconds with a
+posture score of 60.0 (18 fail, 4 cannot scan, 27 pass). Data is kept in the `api-data`
+volume, so scans survive `docker compose down` and rebuilds;
 `docker compose down --volumes` deletes them.
+
+Tested on macOS (Apple Silicon) with Docker Desktop, and on Linux (x86-64) in CI.
 
 ### Without Docker
 
@@ -229,23 +233,33 @@ Where the brief left room, these are the calls I made.
 
 ## Time spent
 
-<!-- Fill in your real times before submitting. -->
+Most of the code was generated with an AI assistant (see the next section), so the
+build itself was quick; the times below are approximate.
 
 | Part | Time |
 | --- | --- |
-| Reading the brief, planning, working through the snapshot by hand | _fill in_ |
-| Scanner engine and checks | _fill in_ |
-| REST API and storage | _fill in_ |
-| Dashboard | _fill in_ |
-| Tests | _fill in_ |
-| Docker and CI | _fill in_ |
-| DEPLOY.md and README | _fill in_ |
+| Planning, and working through the snapshot by hand to fix the expected 49 findings | about 10 min |
+| Scanner engine and the ten checks | about 10 min |
+| REST API and SQLite storage | about 5 min |
+| Backend tests | about 5 min |
+| Dashboard and its tests | about 10 min |
+| Docker, nginx, CI, and checking them (hadolint, actionlint, a real nginx, a headless browser) | about 10 min |
+| README and DEPLOY.md | about 5 min |
+| Running the stack on my Mac and checking the results against the brief | about 30 min |
 
 ## Use of AI assistants
 
-<!-- Make this match what you actually did before submitting. -->
+I used Claude (Anthropic) throughout. Working from the brief, it:
 
-I used Claude (Anthropic) as a coding assistant throughout. It drafted most of the
-code, tests, Docker and CI configuration and documentation, from the brief and my
-direction. I reviewed every file, ran the test suites, the linters and the stack
-locally, and made these changes myself: _fill in_.
+- worked out by hand what every one of the 49 findings in the snapshot should be, before
+  writing code, and turned that into the golden test;
+- wrote the scanner, the checks, the API, the dashboard, the tests, the Dockerfiles,
+  the nginx and Compose configuration, the CI workflow, this README and DEPLOY.md;
+- ran the test suites, Ruff, mypy, ESLint and `tsc` in its sandbox, linted the
+  Dockerfiles and the workflow, ran the real nginx configuration against the API, and
+  checked the dashboard in a headless browser. That browser check caught a
+  Content-Security-Policy problem with inlined fonts, which was fixed.
+
+My part was directing the work, running the stack on my own machine (macOS on Apple
+Silicon, Docker Desktop), checking the dashboard's results against the brief, and
+reviewing the code.
